@@ -35,7 +35,7 @@ func getQuote(sym string) (string, error) {
 		cngs = fmt.Sprintf("+$%.2f", cng)
 	}
 
-	pct := math.RoundToEven(((qq.Close/ qq.Open)-1.0) * 100)
+	pct := ((qq.Close/ qq.Open)-1.0) * 100
 	pcts := fmt.Sprintf("%.2f%%", pct)
 
 	return fmt.Sprintf("%s: Cur: $%.2f: %s (%s)\nOpen: $%.2f, Low: $%.2f, High: $%.2f",
