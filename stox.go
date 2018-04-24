@@ -24,18 +24,22 @@ func getQuote(sym string) (string, error) {
 		return "", err
 	}
 
+	// Results are returned oldest first
+	// For `today` grab the last item
+	qq := res[len(res) - 1]
+
 	// Find pct gain/loss from open
-	cng := res[0].Close - res[0].Open
+	cng := qq.Close - qq.Open
 	cngs := fmt.Sprintf("-$%.2f", math.Abs(cng))
 	if cng >= 0 {
 		cngs = fmt.Sprintf("+$%.2f", cng)
 	}
 
-	pct := math.RoundToEven(((res[0].Close/res[0].Open)-1.0) * 100)
+	pct := math.RoundToEven(((qq.Close/ qq.Open)-1.0) * 100)
 	pcts := fmt.Sprintf("%.2f%%", pct)
 
 	return fmt.Sprintf("%s: Cur: $%.2f: %s (%s)\nOpen: $%.2f, Low: $%.2f, High: $%.2f",
-		sym, res[0].Close, cngs, pcts, res[0].Open, res[0].Low, res[0].High), nil
+		sym, qq.Close, cngs, pcts, qq.Open, qq.Low, qq.High), nil
 
 }
 
