@@ -18,7 +18,7 @@ func isAllUC(s string) bool {
 	return strings.Compare(s, up) == 0
 }
 
-func getQuote(sym string) (string, error) {
+func GetQuote(sym string) (string, error) {
 	res, err := client.StockTimeSeries(av.TimeSeriesDaily, sym)
 	if err != nil {
 		return "", err
@@ -36,16 +36,17 @@ func getQuote(sym string) (string, error) {
 
 	// Find pct gain/loss from open
 	cng := qq.Close - pc
-	cngs := fmt.Sprintf("-$%.2f", math.Abs(cng))
+	cngs := fmt.Sprintf("⬇️$%.2f", math.Abs(cng))
 	if cng >= 0 {
-		cngs = fmt.Sprintf("+$%.2f", cng)
+		cngs = fmt.Sprintf("⬆️$%.2f", cng)
 	}
 
 	pct := (cng/pc) * 100
-	pcts := fmt.Sprintf("%.2f%%", pct)
+	pcts := fmt.Sprintf("%.2f%%", math.Abs(pct))
 
-	return fmt.Sprintf("%s: Cur: $%.2f: %s (%s)\nOpen: $%.2f, Low: $%.2f, High: $%.2f",
-		sym, qq.Close, cngs, pcts, qq.Open, qq.Low, qq.High), nil
+	return fmt.Sprintf(
+		"<https://robinhood.com/stocks/%s|%s>\n: Cur: $%.2f: %s(%s)\nOpen: $%.2f, $%.2f ↔️ $%.2f,",
+		sym, sym, qq.Close, cngs, pcts, qq.Open, qq.Low, qq.High), nil
 
 }
 
@@ -60,7 +61,7 @@ func stoxHook(ctx context.Context, hookChan <-chan *quadlek.HookMsg) {
 					symbol := t[1:]
 					if isAllUC(symbol) {
 						log.Info(fmt.Sprintf("Symobl lookup triggered: %s", symbol))
-						quote, err := getQuote(symbol)
+						quote, err := GetQuote(symbol)
 						if err != nil {
 							hook.Bot.Say(hook.Msg.Channel, fmt.Sprintf("Could not fetch quote for: %s", symbol))
 						} else {
