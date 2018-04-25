@@ -1,35 +1,17 @@
 package stox
 
 import (
-	"fmt"
-	"strings"
 	"context"
+	"fmt"
 	"math"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/jirwin/quadlek/quadlek"
-	"github.com/cmckee-dev/go-alpha-vantage"
 )
 
 var client *av.Client = nil
-
-func validSym(s string) bool {
-	if len(s) > 5 {
-		return false
-	}
-
-	min := int('A')
-	max := int('Z')
-
-	for _, c := range s {
-		o := int(c)
-		if o < min || o > max {
-			return false
-		}
-	}
-
-	return true
-}
+var regexp *Regexp = nil
 
 func GetQuote(sym string) (string, error) {
 	res, err := client.StockTimeSeries(av.TimeSeriesDaily, sym)
@@ -39,12 +21,12 @@ func GetQuote(sym string) (string, error) {
 
 	// Results are returned oldest first
 	// For `today` grab the last item
-	qq := res[len(res) - 1]
+	qq := res[len(res)-1]
 
 	// Previous close can default to current open
 	pc := qq.Open
 	if len(res) > 1 {
-		pc = res[len(res) - 2].Close
+		pc = res[len(res)-2].Close
 	}
 
 	// Find pct gain/loss from open
@@ -54,7 +36,7 @@ func GetQuote(sym string) (string, error) {
 		cngs = fmt.Sprintf("⬆️$%.2f", cng)
 	}
 
-	pct := (cng/pc) * 100
+	pct := (cng / pc) * 100
 	pcts := fmt.Sprintf("%.2f%%", math.Abs(pct))
 
 	return fmt.Sprintf(
@@ -69,30 +51,27 @@ func stoxHook(ctx context.Context, hookChan <-chan *quadlek.HookMsg) {
 		case hook := <-hookChan:
 			tokens := strings.Split(hook.Msg.Text, " ")
 
-			for _, t := range tokens {
-				if strings.HasPrefix(t, "$") {
-					symbol := t[1:]
-					if validSym(symbol) {
-						log.Info(fmt.Sprintf("Symobl lookup triggered: %s", symbol))
-						quote, err := GetQuote(symbol)
-						if err != nil {
-							hook.Bot.Say(hook.Msg.Channel, fmt.Sprintf("Could not fetch quote for: %s", symbol))
-						} else {
-							hook.Bot.Say(hook.Msg.Channel, quote)
-						}
-					}
+			for _, t := range regexp.FindAllString(hook.Msg.Text, -1) {
+				symbol := t[1:]
+				log.Info(fmt.Sprintf("Symobl lookup triggered: %s", symbol))
+				quote, err := GetQuote(symbol)
+				if err != nil {
+					hook.Bot.Say(hook.Msg.Channel, fmt.Sprintf("Could not fetch quote for: %s", symbol))
+				} else {
+					hook.Bot.Say(hook.Msg.Channel, quote)
 				}
 			}
 
 		case <-ctx.Done():
 			log.Info("Exiting Stox")
-		return
+			return
 		}
 	}
 }
 
 func Register(apiKey string) quadlek.Plugin {
 	client = av.NewClient(apiKey)
+	regexp := regexp.MustCompile(`\b$[A-Z]{1,5}\b`)
 
 	return quadlek.MakePlugin(
 		"stox",
@@ -105,4 +84,3 @@ func Register(apiKey string) quadlek.Plugin {
 		nil,
 	)
 }
-
