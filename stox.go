@@ -13,7 +13,7 @@ import (
 
 var client *av.Client = nil
 
-func validSym(s string) bool {
+func ValidSym(s string) bool {
 	if len(s) > 5 {
 		return false
 	}
@@ -72,7 +72,7 @@ func stoxHook(ctx context.Context, hookChan <-chan *quadlek.HookMsg) {
 			for _, t := range tokens {
 				if strings.HasPrefix(t, "$") {
 					symbol := t[1:]
-					if validSym(symbol) {
+					if ValidSym(symbol) {
 						log.Info(fmt.Sprintf("Symobl lookup triggered: %s", symbol))
 						quote, err := GetQuote(symbol)
 						if err != nil {
@@ -104,5 +104,9 @@ func Register(apiKey string) quadlek.Plugin {
 		nil,
 		nil,
 	)
+}
+
+func MakeItSo(apiKey string) {
+	client = av.NewClient(apiKey)
 }
 
