@@ -28,14 +28,20 @@ func getQuote(sym string) (string, error) {
 	// For `today` grab the last item
 	qq := res[len(res) - 1]
 
+	// Previous close can default to current open
+	pc := qq.Open
+	if (len(res) > 1) {
+		pc = res[len(res) - 2].Close
+	}
+
 	// Find pct gain/loss from open
-	cng := qq.Close - qq.Open
+	cng := qq.Close - pc
 	cngs := fmt.Sprintf("-$%.2f", math.Abs(cng))
 	if cng >= 0 {
 		cngs = fmt.Sprintf("+$%.2f", cng)
 	}
 
-	pct := ((qq.Close/ qq.Open)-1.0) * 100
+	pct := (cng/pc) * 100
 	pcts := fmt.Sprintf("%.2f%%", pct)
 
 	return fmt.Sprintf("%s: Cur: $%.2f: %s (%s)\nOpen: $%.2f, Low: $%.2f, High: $%.2f",
