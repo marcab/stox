@@ -13,9 +13,22 @@ import (
 
 var client *av.Client = nil
 
-func isAllUC(s string) bool {
-	up := strings.ToUpper(s)
-	return strings.Compare(s, up) == 0
+func validSym(s string) bool {
+	if len(s) > 5 {
+		return false
+	}
+
+	min := int('A')
+	max := int('Z')
+
+	for _, c := range s {
+		o := int(c)
+		if o < min || o > max {
+			return false
+		}
+	}
+
+	return true
 }
 
 func GetQuote(sym string) (string, error) {
@@ -30,7 +43,7 @@ func GetQuote(sym string) (string, error) {
 
 	// Previous close can default to current open
 	pc := qq.Open
-	if (len(res) > 1) {
+	if len(res) > 1 {
 		pc = res[len(res) - 2].Close
 	}
 
@@ -45,8 +58,8 @@ func GetQuote(sym string) (string, error) {
 	pcts := fmt.Sprintf("%.2f%%", math.Abs(pct))
 
 	return fmt.Sprintf(
-		"<https://robinhood.com/stocks/%s|%s>\n: Cur: $%.2f: %s(%s)\nOpen: $%.2f, $%.2f ↔️ $%.2f,",
-		sym, sym, qq.Close, cngs, pcts, qq.Open, qq.Low, qq.High), nil
+		"https://robinhood.com/stocks/%s\nNow: $%.2f: %s (%s)\nOpen: $%.2f, $%.2f ↔️ $%.2f,",
+		sym, qq.Close, cngs, pcts, qq.Open, qq.Low, qq.High), nil
 
 }
 
@@ -59,7 +72,7 @@ func stoxHook(ctx context.Context, hookChan <-chan *quadlek.HookMsg) {
 			for _, t := range tokens {
 				if strings.HasPrefix(t, "$") {
 					symbol := t[1:]
-					if isAllUC(symbol) {
+					if validSym(symbol) {
 						log.Info(fmt.Sprintf("Symobl lookup triggered: %s", symbol))
 						quote, err := GetQuote(symbol)
 						if err != nil {
